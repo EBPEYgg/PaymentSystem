@@ -7,13 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Abstractions\" />
-    <Folder Include="Mappers\" />
     <Folder Include="Models\Authentication\" />
     <Folder Include="Models\Carts\" />
     <Folder Include="Models\Merchants\" />
     <Folder Include="Models\Orders\" />
-    <Folder Include="Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PaymentSystem.Domain\PaymentSystem.Domain.csproj" />
   </ItemGroup>
 
 </Project>
