@@ -10,6 +10,8 @@ namespace PaymentSystem.Application.Models.Orders
 
         public long CustomerId { get; set; }
 
-        public CartDto Cart { get; set; }
+        public CartDto? Cart { get; set; }
+
+        public long MerchantId { get; set; }
     }
 }

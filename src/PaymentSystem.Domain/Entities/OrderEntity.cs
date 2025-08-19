@@ -13,5 +13,9 @@
         public CartEntity? Cart { get; set; }
 
         public long? CartId { get; set; }
+
+        public long? MerchantId { get; set; }
+
+        public MerchantEntity? Merchant { get; set; }
     }
 }

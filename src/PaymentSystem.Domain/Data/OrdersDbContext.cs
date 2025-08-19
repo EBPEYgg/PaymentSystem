@@ -13,6 +13,8 @@ namespace PaymentSystem.Domain.Data
 
         public DbSet<OrderEntity> Orders { get; set; } = null!;
 
+        public DbSet<MerchantEntity> Merchants { get; set; } = null!;
+
         public OrdersDbContext(DbContextOptions<OrdersDbContext> options) : base(options)
         {
             if (Database.GetPendingMigrations().Any())

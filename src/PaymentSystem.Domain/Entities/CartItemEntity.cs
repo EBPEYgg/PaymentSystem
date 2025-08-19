@@ -2,7 +2,7 @@
 {
     public class CartItemEntity : BaseEntity
     {
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
 
         public int Quantity { get; set; }
 

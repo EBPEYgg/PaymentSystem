@@ -12,8 +12,8 @@ using PaymentSystem.Domain.Data;
 namespace PaymentSystem.Domain.Migrations
 {
     [DbContext(typeof(OrdersDbContext))]
-    [Migration("20250815171926_Initial")]
-    partial class Initial
+    [Migration("20250819140127_AddMerchants")]
+    partial class AddMerchants
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -117,6 +117,36 @@ namespace PaymentSystem.Domain.Migrations
                     b.ToTable("Customers");
                 });
 
+            modelBuilder.Entity("PaymentSystem.Domain.Entities.MerchantEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WebSite")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Merchants");
+                });
+
             modelBuilder.Entity("PaymentSystem.Domain.Entities.OrderEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -137,6 +167,9 @@ namespace PaymentSystem.Domain.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<long?>("MerchantId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
@@ -148,6 +181,8 @@ namespace PaymentSystem.Domain.Migrations
                     b.HasIndex("CartId");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("MerchantId");
 
                     b.ToTable("Orders");
                 });
@@ -171,9 +206,15 @@ namespace PaymentSystem.Domain.Migrations
                         .WithMany("Orders")
                         .HasForeignKey("CustomerId");
 
+                    b.HasOne("PaymentSystem.Domain.Entities.MerchantEntity", "Merchant")
+                        .WithMany()
+                        .HasForeignKey("MerchantId");
+
                     b.Navigation("Cart");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Merchant");
                 });
 
             modelBuilder.Entity("PaymentSystem.Domain.Entities.CartEntity", b =>
