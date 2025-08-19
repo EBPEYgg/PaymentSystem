@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using PaymentSystem.Application.Abstractions;
 using PaymentSystem.Application.Models.Orders;
 
 namespace PaymentSystem.Web.Controllers
 {
     [Route("api/v1/orders")]
+    [Authorize]
     public class OrdersController(IOrdersService orders) : ApiBaseController
     {
         [HttpPost]

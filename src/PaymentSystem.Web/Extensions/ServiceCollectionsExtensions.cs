@@ -1,6 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PaymentSystem.Application.Abstractions;
+using PaymentSystem.Application.Services;
 using PaymentSystem.Domain.Data;
+using PaymentSystem.Domain.Entities;
+using PaymentSystem.Domain.Models;
+using PaymentSystem.Domain.Options;
+using System.Text;
 
 namespace PaymentSystem.Web.Extensions
 {
@@ -47,6 +57,56 @@ namespace PaymentSystem.Web.Extensions
         {
             builder.Services.AddDbContext<OrdersDbContext>(opt =>
                 opt.UseNpgsql(builder.Configuration.GetConnectionString("Orders")));
+
+            return builder;
+        }
+
+        public static WebApplicationBuilder AddBearerAuthentication(this WebApplicationBuilder builder)
+        {
+            builder.Services
+                .AddAuthentication(x =>
+                {
+                    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(x =>
+                {
+                    x.RequireHttpsMetadata = false;
+                    x.SaveToken = true;
+                    x.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(
+                            builder.Configuration["Authentication:TokenPrivateKey"]!)),
+                        ValidateIssuer = true,
+                        ValidIssuer = builder.Configuration["Authentication:Issuer"],
+                        ValidateAudience = true,
+                        ValidAudience = builder.Configuration["Authentication:Audience"],
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true
+                    };
+                });
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("Admin", policy => policy.RequireRole(RoleConstants.Admin));
+                options.AddPolicy("Merchant", policy => policy.RequireRole(RoleConstants.Merchant));
+                options.AddPolicy("User", policy => policy.RequireRole(RoleConstants.User));
+            });
+            builder.Services.AddTransient<IAuthService, AuthService>();
+            builder.Services.AddDefaultIdentity<IdentityUserEntity>(options =>
+                {
+                    options.Password.RequiredLength = 6;
+                    options.Password.RequireNonAlphanumeric = false;
+                })
+                .AddEntityFrameworkStores<OrdersDbContext>()
+                .AddUserManager<UserManager<IdentityUserEntity>>()
+                .AddUserStore<UserStore<IdentityUserEntity, IdentityRoleUserEntity, OrdersDbContext, long>>();
+
+            return builder;
+        }
+
+        public static WebApplicationBuilder AddOptions(this WebApplicationBuilder builder)
+        {
+            builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Authentication"));
 
             return builder;
         }

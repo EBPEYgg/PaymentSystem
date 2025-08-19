@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PaymentSystem.Domain.Entities;
 
 namespace PaymentSystem.Domain.Data
 {
-    public sealed class OrdersDbContext : DbContext
+    public sealed class OrdersDbContext : IdentityDbContext<IdentityUserEntity, IdentityRoleUserEntity, long>
     {
         public DbSet<CustomerEntity> Customers { get; set; } = null!;
 
