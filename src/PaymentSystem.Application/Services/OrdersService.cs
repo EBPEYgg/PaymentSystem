@@ -17,11 +17,14 @@ namespace PaymentSystem.Application.Services
 
         public async Task<OrderDto> Create(CreateOrderDto order)
         {
-            var orderByOrderNumber = await context.Orders.FirstOrDefaultAsync(
+            _logger.Debug("Received CreateOrderDto: {@Order}", order);
+
+            var existingOrder = await context.Orders.FirstOrDefaultAsync(
                 x => x.OrderNumber == order.OrderNumber && x.MerchantId == order.MerchantId);
 
             if (order.Cart == null)
             {
+                _logger.Error("Attempt to create order without a cart. OrderNumber={OrderNumber}", order.OrderNumber);
                 throw new ArgumentNullException();
             }
 
@@ -38,44 +41,53 @@ namespace PaymentSystem.Application.Services
             await context.SaveChangesAsync();
 
             var orderEntityResult = orderSaveResult.Entity;
+            _logger.Info("Successfully created a new order with id={OrderId}, OrderNumber={OrderNumber}.", 
+                entity.Id, entity.OrderNumber);
             return orderEntityResult.ToDto();
         }
 
         public async Task<List<OrderDto>> GetAll()
         {
             _logger.Info("Retrieving all orders from the database.");
-            var entity = await context.Orders
+            var entities = await context.Orders
                 .Include(o => o.Cart)
                 .ThenInclude(c => c.CartItems)
                 .ToListAsync();
 
-            return entity.Select(x => x.ToDto()).ToList();
+            _logger.Info("Successfully retrieved {Count} orders from the database.", entities.Count());
+            return entities.Select(x => x.ToDto()).ToList();
         }
 
         public async Task<OrderDto> GetById(long orderId)
         {
+            _logger.Info("Retrieving order with id={OrderId}", orderId);
             var entity = await context.Orders
                 .Include(o => o.Cart)
                 .ThenInclude(c => c.CartItems)
                 .FirstOrDefaultAsync(x => x.Id == orderId);
 
+            _logger.Info("Successfully retrieved order with id={OrderId}", orderId);
             return entity.ToDto();
         }
 
         public async Task<List<OrderDto>> GetByUser(long customerId)
         {
-            var entity = await context.Orders
+            _logger.Info("Retrieving orders by customer id={CustomerId}", customerId);
+            var entities = await context.Orders
                 .Include(o => o.Cart)
                 .ThenInclude(c => c.CartItems)
                 .Where(x => x.CustomerId == customerId)
                 .ToListAsync();
 
-            return entity.Select(x => x.ToDto()).ToList();
+            _logger.Info("Successfully retrieved {Count} orders for customer id={CustomerId}", entities.Count, customerId);
+            return entities.Select(x => x.ToDto()).ToList();
         }
 
         public async Task Reject(long orderId)
         {
+            _logger.Info("Rejecting order with id={OrderId}", orderId);
             throw new NotImplementedException();
+            _logger.Info("Successfully rejecting order with id={OrderId}", orderId);
         }
     }
 }

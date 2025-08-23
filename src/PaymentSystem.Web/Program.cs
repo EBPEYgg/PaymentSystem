@@ -1,6 +1,11 @@
+using NLog;
+using NLog.Web;
 using PaymentSystem.Application.Abstractions;
 using PaymentSystem.Application.Services;
 using PaymentSystem.Web.Extensions;
+
+var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
+logger.Debug("Initializing application");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +22,7 @@ builder
     .AddData();
 
 var app = builder.Build();
+logger.Info("Starting the app");
 
 app.UseAuthentication();
 app.UseAuthorization();
