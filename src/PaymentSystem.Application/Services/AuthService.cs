@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using NLog;
 using PaymentSystem.Application.Abstractions;
 using PaymentSystem.Application.Models.Authentication;
 using PaymentSystem.Domain.Entities;
@@ -18,8 +19,11 @@ namespace PaymentSystem.Application.Services
     {
         private readonly AuthOptions _authOptions = authOptions.Value;
 
+        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
         public async Task<UserResponse> Login(UserLoginDto userLoginDto)
         {
+            _logger.Debug("Login attempt for Email={Email}.", userLoginDto.Email);
             var user = await userManager.FindByEmailAsync(userLoginDto.Email);
             var checkPasswordResult = await userManager.CheckPasswordAsync(user, userLoginDto.Password);
 
@@ -34,14 +38,16 @@ namespace PaymentSystem.Application.Services
                     Username = user.UserName,
                     Phone = user.PhoneNumber
                 };
+                _logger.Info("User logged in successfully. Email={Email}, UserId={UserId}.", user.Email, user.Id);
                 return GenerateToken(response);
             }
 
-            throw new AuthenticationException();
+            _logger.Error("Login attempt failed for Email={Email}.", userLoginDto.Email);
         }
 
         public async Task<UserResponse> Register(UserRegisterDto userRegisterDto)
         {
+            _logger.Debug("Register attempt for Email={Email}.", userRegisterDto.Email);
             var createUserResult = await userManager.CreateAsync(new IdentityUserEntity
             {
                 Email = userRegisterDto.Email,
@@ -64,13 +70,16 @@ namespace PaymentSystem.Application.Services
                         Username = user.UserName,
                         Phone = user.PhoneNumber
                     };
+                    _logger.Info("User registered successfully. Email={Email}, UserId={UserId}.", user.Email, user.Id);
                     return GenerateToken(response);
                 }
 
+                _logger.Error("Unsuccessful attempt to add a role to a user with an email={Email}.", userRegisterDto.Email);
                 throw new Exception($"Errors: {string.Join(";", result.Errors
                     .Select(x => $"{x.Code} {x.Description}"))}");
             }
 
+            _logger.Error("Registration attempt failed for Email={Email}.", userRegisterDto.Email);
             throw new Exception($"Errors: {string.Join(";", createUserResult.Errors
                 .Select(x => $"{x.Code} {x.Description}"))}");
         }

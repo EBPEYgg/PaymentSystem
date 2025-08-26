@@ -15,7 +15,7 @@ namespace PaymentSystem.Application.Services
 
         public async Task<MerchantsDto> Create(MerchantsDto merchant)
         {
-            _logger.Debug("Received MerchantsDto: {@Merchant}", merchant);
+            _logger.Debug("Received MerchantsDto: {@Merchant}.", merchant);
             var entity = new MerchantEntity()
             {
                 Name = merchant.Name,
@@ -26,7 +26,7 @@ namespace PaymentSystem.Application.Services
             var result = await context.Merchants.AddAsync(entity);
             var resultEntity = result.Entity;
             await context.SaveChangesAsync();
-            _logger.Info("Succesfully created a merchant with id={MerchantId}", resultEntity.Id);
+            _logger.Info("Succesfully created a merchant with id={MerchantId}.", resultEntity.Id);
 
             return new MerchantsDto()
             {

@@ -17,14 +17,14 @@ namespace PaymentSystem.Application.Services
 
         public async Task<OrderDto> Create(CreateOrderDto order)
         {
-            _logger.Debug("Received CreateOrderDto: {@Order}", order);
+            _logger.Debug("Received CreateOrderDto: {@Order}.", order);
 
             var existingOrder = await context.Orders.FirstOrDefaultAsync(
                 x => x.OrderNumber == order.OrderNumber && x.MerchantId == order.MerchantId);
 
             if (order.Cart == null)
             {
-                _logger.Error("Attempt to create order without a cart. OrderNumber={OrderNumber}", order.OrderNumber);
+                _logger.Error("Attempt to create order without a cart. OrderNumber={OrderNumber}.", order.OrderNumber);
                 throw new ArgumentNullException();
             }
 
@@ -60,7 +60,7 @@ namespace PaymentSystem.Application.Services
 
         public async Task<OrderDto> GetById(long orderId)
         {
-            _logger.Info("Retrieving order with id={OrderId}", orderId);
+            _logger.Info("Retrieving order with id={OrderId}.", orderId);
             var entity = await context.Orders
                 .Include(o => o.Cart)
                 .ThenInclude(c => c.CartItems)
@@ -72,22 +72,22 @@ namespace PaymentSystem.Application.Services
 
         public async Task<List<OrderDto>> GetByUser(long customerId)
         {
-            _logger.Info("Retrieving orders by customer id={CustomerId}", customerId);
+            _logger.Info("Retrieving orders by customer id={CustomerId}.", customerId);
             var entities = await context.Orders
                 .Include(o => o.Cart)
                 .ThenInclude(c => c.CartItems)
                 .Where(x => x.CustomerId == customerId)
                 .ToListAsync();
 
-            _logger.Info("Successfully retrieved {Count} orders for customer id={CustomerId}", entities.Count, customerId);
+            _logger.Info("Successfully retrieved {Count} orders for customer id={CustomerId}.", entities.Count, customerId);
             return entities.Select(x => x.ToDto()).ToList();
         }
 
         public async Task Reject(long orderId)
         {
-            _logger.Info("Rejecting order with id={OrderId}", orderId);
+            _logger.Info("Rejecting order with id={OrderId}.", orderId);
             throw new NotImplementedException();
-            _logger.Info("Successfully rejecting order with id={OrderId}", orderId);
+            _logger.Info("Successfully rejecting order with id={OrderId}.", orderId);
         }
     }
 }
