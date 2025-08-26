@@ -61,6 +61,15 @@ namespace PaymentSystem.Web.Extensions
             return builder;
         }
 
+        public static WebApplicationBuilder AddApplicationServices(this WebApplicationBuilder builder)
+        {
+            builder.Services.AddScoped<ICartsService, CartsService>();
+            builder.Services.AddScoped<IOrdersService, OrdersService>();
+            builder.Services.AddScoped<IMerchantsService, MerchantsService>();
+
+            return builder;
+        }
+
         public static WebApplicationBuilder AddBearerAuthentication(this WebApplicationBuilder builder)
         {
             builder.Services

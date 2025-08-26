@@ -27,4 +27,9 @@
     <ProjectReference Include="..\PaymentSystem.Domain\PaymentSystem.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <Folder Include="Filters\" />
+  </ItemGroup>
+
 </Project>

@@ -5,6 +5,7 @@ using PaymentSystem.Application.Mappers;
 using PaymentSystem.Application.Models.Orders;
 using PaymentSystem.Domain.Data;
 using PaymentSystem.Domain.Entities;
+using PaymentSystem.Domain.Exceptions;
 
 namespace PaymentSystem.Application.Services
 {
@@ -21,6 +22,14 @@ namespace PaymentSystem.Application.Services
 
             var existingOrder = await context.Orders.FirstOrDefaultAsync(
                 x => x.OrderNumber == order.OrderNumber && x.MerchantId == order.MerchantId);
+
+            if (existingOrder != null)
+            {
+                _logger.Warn("Order with OrderNumber={OrderNumber} is exist for MerchantId={MerchantId}.", 
+                    order.OrderNumber, order.MerchantId);
+                throw new DuplicateEntityException($"Order with orderNumber={order.OrderNumber} is exist " +
+                    $"for merchant id={order.MerchantId}.");
+            }
 
             if (order.Cart == null)
             {
@@ -66,7 +75,12 @@ namespace PaymentSystem.Application.Services
                 .ThenInclude(c => c.CartItems)
                 .FirstOrDefaultAsync(x => x.Id == orderId);
 
-            _logger.Info("Successfully retrieved order with id={OrderId}", orderId);
+            if (entity == null)
+            {
+                throw new EntityNotFoundException($"Order entity with id={orderId} not found.");
+            }
+
+            _logger.Info("Successfully retrieved order with id={OrderId}.", orderId);
             return entity.ToDto();
         }
 

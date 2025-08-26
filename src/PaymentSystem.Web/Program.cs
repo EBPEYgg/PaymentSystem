@@ -1,7 +1,6 @@
 using NLog;
 using NLog.Web;
-using PaymentSystem.Application.Abstractions;
-using PaymentSystem.Application.Services;
+using PaymentSystem.Extensions;
 using PaymentSystem.Web.Extensions;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -11,15 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddScoped<ICartsService, CartsService>();
-builder.Services.AddScoped<IOrdersService, OrdersService>();
-builder.Services.AddScoped<IMerchantsService, MerchantsService>();
 
 builder
     .AddBearerAuthentication()
     .AddOptions()
     .AddSwagger()
-    .AddData();
+    .AddData()
+    .AddApplicationServices();
 
 var app = builder.Build();
 logger.Info("Starting the app");
@@ -33,6 +30,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseErrorHandling();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();

@@ -5,6 +5,7 @@ using NLog;
 using PaymentSystem.Application.Abstractions;
 using PaymentSystem.Application.Models.Authentication;
 using PaymentSystem.Domain.Entities;
+using PaymentSystem.Domain.Exceptions;
 using PaymentSystem.Domain.Models;
 using PaymentSystem.Domain.Options;
 using System.IdentityModel.Tokens.Jwt;
@@ -25,6 +26,12 @@ namespace PaymentSystem.Application.Services
         {
             _logger.Debug("Login attempt for Email={Email}.", userLoginDto.Email);
             var user = await userManager.FindByEmailAsync(userLoginDto.Email);
+
+            if (user == null)
+            {
+                throw new EntityNotFoundException($"User with email={userLoginDto.Email} not found.");
+            }
+
             var checkPasswordResult = await userManager.CheckPasswordAsync(user, userLoginDto.Password);
 
             if (checkPasswordResult)
@@ -43,11 +50,18 @@ namespace PaymentSystem.Application.Services
             }
 
             _logger.Error("Login attempt failed for Email={Email}.", userLoginDto.Email);
+            throw new AuthenticationException("Incorrect password.");
         }
 
         public async Task<UserResponse> Register(UserRegisterDto userRegisterDto)
         {
             _logger.Debug("Register attempt for Email={Email}.", userRegisterDto.Email);
+
+            if (await userManager.FindByEmailAsync(userRegisterDto.Email) != null)
+            {
+                throw new DuplicateEntityException($"User with Email={userRegisterDto.Email} already exists.");
+            }
+
             var createUserResult = await userManager.CreateAsync(new IdentityUserEntity
             {
                 Email = userRegisterDto.Email,
@@ -58,6 +72,12 @@ namespace PaymentSystem.Application.Services
             if (createUserResult.Succeeded)
             {
                 var user = await userManager.FindByEmailAsync(userRegisterDto.Email);
+
+                if (user == null)
+                {
+                    throw new EntityNotFoundException($"User with email={userRegisterDto.Email} not registered.");
+                }
+
                 var result = await userManager.AddToRoleAsync(user, RoleConstants.User);
 
                 if (result.Succeeded)
