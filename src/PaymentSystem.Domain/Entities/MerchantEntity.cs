@@ -7,5 +7,7 @@
         public required string Phone { get; set; }
 
         public string? WebSite { get; set; }
+
+        public List<IdentityUserEntity>? Users { get; set; }
     }
 }
