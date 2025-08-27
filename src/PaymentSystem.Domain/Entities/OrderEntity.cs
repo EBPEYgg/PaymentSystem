@@ -1,10 +1,14 @@
-﻿namespace PaymentSystem.Domain.Entities
+﻿using PaymentSystem.Domain.Models;
+
+namespace PaymentSystem.Domain.Entities
 {
     public class OrderEntity : BaseEntity
     {
         public string? Name { get; set; }
 
         public long OrderNumber { get; set; }
+
+        public OrderStatus OrderStatus { get; set; } = OrderStatus.Created;
 
         public CustomerEntity? Customer { get; set; }
 
@@ -14,8 +18,8 @@
 
         public long? CartId { get; set; }
 
-        public long? MerchantId { get; set; }
-
         public MerchantEntity? Merchant { get; set; }
+
+        public long? MerchantId { get; set; }
     }
 }

@@ -6,6 +6,7 @@ using PaymentSystem.Application.Models.Orders;
 using PaymentSystem.Domain.Data;
 using PaymentSystem.Domain.Entities;
 using PaymentSystem.Domain.Exceptions;
+using PaymentSystem.Domain.Models;
 
 namespace PaymentSystem.Application.Services
 {
@@ -100,7 +101,15 @@ namespace PaymentSystem.Application.Services
         public async Task Reject(long orderId)
         {
             _logger.Info("Rejecting order with id={OrderId}.", orderId);
-            throw new NotImplementedException();
+            var order = await context.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order == null)
+            {
+                throw new EntityNotFoundException($"Order with id={orderId} not found.");
+            }
+
+            order.OrderStatus = OrderStatus.Reject;
+            await context.SaveChangesAsync();
             _logger.Info("Successfully rejecting order with id={OrderId}.", orderId);
         }
     }
