@@ -85,13 +85,14 @@ namespace PaymentSystem.Web.Extensions
                     x.TokenValidationParameters = new TokenValidationParameters()
                     {
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(
-                            builder.Configuration["Authentication:TokenPrivateKey"]!)),
+                            builder.Configuration["Authentication:JwtTokenPrivateKey"]!)),
                         ValidateIssuer = true,
                         ValidIssuer = builder.Configuration["Authentication:Issuer"],
                         ValidateAudience = true,
                         ValidAudience = builder.Configuration["Authentication:Audience"],
                         ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true
+                        ValidateIssuerSigningKey = true,
+                        ClockSkew = TimeSpan.Zero
                     };
                 });
             builder.Services.AddAuthorization(options =>

@@ -1,4 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Authentication;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using NLog;
@@ -8,10 +13,6 @@ using PaymentSystem.Domain.Entities;
 using PaymentSystem.Domain.Exceptions;
 using PaymentSystem.Domain.Models;
 using PaymentSystem.Domain.Options;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Authentication;
-using System.Security.Claims;
-using System.Text;
 
 namespace PaymentSystem.Application.Services
 {
@@ -43,8 +44,16 @@ namespace PaymentSystem.Application.Services
                     Email = user.Email,
                     Roles = userRoles.ToArray(),
                     Username = user.UserName,
-                    Phone = user.PhoneNumber
+                    Phone = user.PhoneNumber,
+                    RefreshToken = GenerateRefreshTokenString(),
+                    IsLoggedIn = true
                 };
+                
+                user.RefreshToken = response.RefreshToken;
+                user.RefreshTokenExpiry = DateTime.UtcNow.AddMinutes(
+                    _authOptions.RefreshTokenJwtTokenExpiryIntervalMinutes);
+                await userManager.UpdateAsync(user);
+
                 _logger.Info("User logged in successfully. Email={Email}, UserId={UserId}.", user.Email, user.Id);
                 return GenerateToken(response);
             }
@@ -104,24 +113,25 @@ namespace PaymentSystem.Application.Services
                 .Select(x => $"{x.Code} {x.Description}"))}");
         }
 
-        public UserResponse GenerateToken(UserResponse user)
+        #region access jwt token
+        private UserResponse GenerateToken(UserResponse user)
         {
             var handler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_authOptions.TokenPrivateKey);
+            var key = Encoding.ASCII.GetBytes(_authOptions.JwtTokenPrivateKey);
             var credentials = new SigningCredentials(new SymmetricSecurityKey(key),
                                                      SecurityAlgorithms.HmacSha256Signature);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = GenerateClaims(user),
-                Expires = DateTime.UtcNow.AddMinutes(_authOptions.ExpireIntervalMinutes),
+                Expires = DateTime.UtcNow.AddMinutes(_authOptions.JwtTokenExpiryIntervalMinutes),
                 SigningCredentials = credentials,
                 Audience = _authOptions?.Audience,
                 Issuer = _authOptions?.Issuer,
             };
 
             var token = handler.CreateToken(tokenDescriptor);
-            user.Token = handler.WriteToken(token);
+            user.JwtToken = handler.WriteToken(token);
 
             return user;
         }
@@ -139,5 +149,88 @@ namespace PaymentSystem.Application.Services
 
             return claims;
         }
+        #endregion
+
+        #region refresh token
+        private string GenerateRefreshTokenString()
+        {
+            var randomNumber = new byte[64];
+            using (var numberGenerator = RandomNumberGenerator.Create())
+            {
+                numberGenerator.GetBytes(randomNumber);
+            }
+
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        public async Task<UserResponse> RefreshToken(RefreshTokenModel model)
+        {
+            var principal = GetTokenPrincipal(model.JwtToken, false);
+
+            if (principal?.Identity?.Name is null)
+            {
+                throw new AuthenticationException("Invalid JWT token.");
+            }
+
+            var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new AuthenticationException("JWT does not contain user identifier.");
+            }
+
+            var user = await userManager.FindByIdAsync(userId);
+
+            if (user is null)
+            {
+                throw new EntityNotFoundException($"User with id={userId} not found.");
+            }
+
+            if (user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiry <= DateTime.UtcNow)
+            {
+                throw new AuthenticationException("Invalid refresh token.");
+            }
+
+            var userRoles = await userManager.GetRolesAsync(user);
+            var userResponse = new UserResponse
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Roles = userRoles.ToArray(),
+                Username = user.UserName,
+                Phone = user.PhoneNumber,
+                IsLoggedIn = true
+            };
+
+            userResponse = GenerateToken(userResponse);
+            var newRefreshToken = GenerateRefreshTokenString();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddMinutes(
+                _authOptions.RefreshTokenJwtTokenExpiryIntervalMinutes);
+
+            await userManager.UpdateAsync(user);
+
+            userResponse.RefreshToken = newRefreshToken;
+            return userResponse;
+        }
+
+        private ClaimsPrincipal? GetTokenPrincipal(string token, bool validateLifetime = true)
+        {
+            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_authOptions.JwtTokenPrivateKey));
+            var validation = new TokenValidationParameters()
+            {
+                ValidateIssuer = true,
+                ValidIssuer = _authOptions.Issuer,
+                ValidateAudience = true,
+                ValidAudience = _authOptions.Audience,
+                ValidateLifetime = validateLifetime,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = key
+            };
+
+            return new JwtSecurityTokenHandler().ValidateToken(token, validation, out _);
+        }
+        #endregion
     }
 }

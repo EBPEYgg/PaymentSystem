@@ -12,6 +12,10 @@
 
         public string? Phone { get; set; }
 
-        public string? Token { get; set; }
+        public string? JwtToken { get; set; }
+
+        public string? RefreshToken { get; internal set; }
+
+        public bool IsLoggedIn { get; set; } = false;
     }
 }

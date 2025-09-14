@@ -6,8 +6,10 @@
 
         public string? Audience { get; set; }
 
-        public required string TokenPrivateKey { get; set; }
+        public required string JwtTokenPrivateKey { get; set; }
 
-        public int ExpireIntervalMinutes { get; set; }
+        public int JwtTokenExpiryIntervalMinutes { get; set; }
+
+        public int RefreshTokenJwtTokenExpiryIntervalMinutes { get; set; }
     }
 }

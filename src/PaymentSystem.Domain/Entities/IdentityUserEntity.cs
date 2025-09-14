@@ -7,5 +7,9 @@ namespace PaymentSystem.Domain.Entities
         public long? MerchantId { get; set; }
 
         public MerchantEntity? Merchant { get; set; }
+
+        public string? RefreshToken { get; set; }
+
+        public DateTime RefreshTokenExpiry { get; set; }
     }
 }

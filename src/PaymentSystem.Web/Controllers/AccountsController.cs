@@ -22,5 +22,18 @@ namespace PaymentSystem.Web.Controllers
 
             return Ok(result);
         }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken(RefreshTokenModel model)
+        {
+            var loginResult = await authService.RefreshToken(model);
+
+            if (loginResult.IsLoggedIn)
+            {
+                return Ok(loginResult);
+            }
+
+            return Unauthorized();
+        }
     }
 }

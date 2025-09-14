@@ -7,5 +7,7 @@ namespace PaymentSystem.Application.Abstractions
         Task<UserResponse> Register(UserRegisterDto userRegisterDto);
 
         Task<UserResponse> Login(UserLoginDto userLoginDto);
+
+        Task<UserResponse> RefreshToken(RefreshTokenModel model);
     }
 }
