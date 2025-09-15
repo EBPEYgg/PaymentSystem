@@ -1,6 +1,7 @@
 ﻿using PaymentSystem.Application.Models.Carts;
 using PaymentSystem.Application.Models.Orders;
 using PaymentSystem.Domain.Entities;
+using PaymentSystem.Domain.Models;
 
 namespace PaymentSystem.Application.Mappers
 {
@@ -14,7 +15,8 @@ namespace PaymentSystem.Application.Mappers
                 CustomerId = entity.CustomerId!.Value,
                 Cart = cart == null ? entity.Cart?.ToDto() : cart.ToDto(),
                 Name = entity.Name,
-                OrderNumber = entity.OrderNumber
+                OrderNumber = entity.OrderNumber,
+                OrderStatus = entity.OrderStatus.ToString()
             };
         }
 
@@ -25,7 +27,8 @@ namespace PaymentSystem.Application.Mappers
                 CustomerId = entity.CustomerId,
                 Cart = cart?.ToEntity(),
                 Name = entity.Name,
-                OrderNumber = entity.OrderNumber
+                OrderNumber = entity.OrderNumber,
+                OrderStatus = (OrderStatus)Enum.Parse(typeof(OrderStatus), entity.OrderStatus)
             };
         }
     }

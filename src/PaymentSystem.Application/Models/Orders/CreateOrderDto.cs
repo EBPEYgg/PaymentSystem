@@ -13,5 +13,7 @@ namespace PaymentSystem.Application.Models.Orders
         public CartDto? Cart { get; set; }
 
         public long MerchantId { get; set; }
+
+        public string? OrderStatus { get; set; }
     }
 }
