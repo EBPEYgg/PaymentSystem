@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,6 @@ using PaymentSystem.Domain.Data;
 using PaymentSystem.Domain.Entities;
 using PaymentSystem.Domain.Models;
 using PaymentSystem.Domain.Options;
-using System.Text;
 
 namespace PaymentSystem.Web.Extensions
 {
@@ -72,6 +72,16 @@ namespace PaymentSystem.Web.Extensions
 
         public static WebApplicationBuilder AddBearerAuthentication(this WebApplicationBuilder builder)
         {
+            builder.Services.AddIdentity<IdentityUserEntity, IdentityRoleUserEntity>(options =>
+            {
+                options.Password.RequiredLength = 6;
+                options.Password.RequireNonAlphanumeric = false;
+            })
+                .AddEntityFrameworkStores<OrdersDbContext>()
+                .AddUserManager<UserManager<IdentityUserEntity>>()
+                .AddRoleManager<RoleManager<IdentityRoleUserEntity>>()
+                .AddUserStore<UserStore<IdentityUserEntity, IdentityRoleUserEntity, OrdersDbContext, long>>()
+                .AddRoleStore<RoleStore<IdentityRoleUserEntity, OrdersDbContext, long>>();
             builder.Services
                 .AddAuthentication(x =>
                 {
@@ -102,14 +112,6 @@ namespace PaymentSystem.Web.Extensions
                 options.AddPolicy("User", policy => policy.RequireRole(RoleConstants.User));
             });
             builder.Services.AddTransient<IAuthService, AuthService>();
-            builder.Services.AddDefaultIdentity<IdentityUserEntity>(options =>
-                {
-                    options.Password.RequiredLength = 6;
-                    options.Password.RequireNonAlphanumeric = false;
-                })
-                .AddEntityFrameworkStores<OrdersDbContext>()
-                .AddUserManager<UserManager<IdentityUserEntity>>()
-                .AddUserStore<UserStore<IdentityUserEntity, IdentityRoleUserEntity, OrdersDbContext, long>>();
 
             return builder;
         }

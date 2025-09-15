@@ -33,4 +33,5 @@ if (app.Environment.IsDevelopment())
 app.UseErrorHandling();
 app.UseHttpsRedirection();
 app.MapControllers();
+await IdentityInitializer.InitializeRoles(app.Services);
 app.Run();
