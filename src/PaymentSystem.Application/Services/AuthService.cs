@@ -100,7 +100,7 @@ namespace PaymentSystem.Application.Services
                         Phone = user.PhoneNumber
                     };
                     _logger.Info("User registered successfully. Email={Email}, UserId={UserId}.", user.Email, user.Id);
-                    return GenerateToken(response);
+                    return response;
                 }
 
                 _logger.Error("Unsuccessful attempt to add a role to a user with an email={Email}.", userRegisterDto.Email);
@@ -111,6 +111,56 @@ namespace PaymentSystem.Application.Services
             _logger.Error("Registration attempt failed for Email={Email}.", userRegisterDto.Email);
             throw new Exception($"Errors: {string.Join(";", createUserResult.Errors
                 .Select(x => $"{x.Code} {x.Description}"))}");
+        }
+
+        public async Task<UserResponse?> RevokeToken(ClaimsPrincipal currentUser, string? targetUserId)
+        {
+            var currentUserId = currentUser.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _logger.Debug("Revoke token attempt for UserId={UserId} by UserId={Id}.",
+                targetUserId, currentUserId);
+
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                throw new UnauthorizedAccessException("UserId not found in token.");
+            }
+
+            var user = await userManager.FindByIdAsync(currentUserId);
+            if (user == null)
+            {
+                throw new EntityNotFoundException($"Current user with id={currentUserId} not found.");
+            }
+
+            var userRoles = await userManager.GetRolesAsync(user);
+            var isAdmin = userRoles.Contains(RoleConstants.Admin);
+
+            // определяем у какого пользователя отзываем рефреш токен - у админа или у пользователя
+            var actualUserId = isAdmin && !string.IsNullOrEmpty(targetUserId) ? targetUserId : currentUserId;
+
+            var targetUser = await userManager.FindByIdAsync(actualUserId);
+            if (targetUser == null || string.IsNullOrEmpty(targetUser.RefreshToken))
+            {
+                return null;
+            }
+
+            targetUser.RefreshToken = null;
+            targetUser.RefreshTokenExpiry = null;
+
+            await userManager.UpdateAsync(targetUser);
+            var targetRoles = await userManager.GetRolesAsync(targetUser);
+
+            _logger.Info("Token is successfully revoked. Email={Email}, UserId={UserId}.",
+                         targetUser.Email, targetUser.Id);
+
+            return new UserResponse
+            {
+                Id = targetUser.Id,
+                Email = targetUser.Email,
+                Username = targetUser.UserName,
+                Phone = targetUser.PhoneNumber,
+                Roles = targetRoles.ToArray(),
+                RefreshToken = targetUser.RefreshToken,
+                IsLoggedIn = false
+            };
         }
 
         #region access jwt token

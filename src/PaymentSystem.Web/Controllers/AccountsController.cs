@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PaymentSystem.Application.Abstractions;
 using PaymentSystem.Application.Models.Authentication;
@@ -34,6 +35,20 @@ namespace PaymentSystem.Web.Controllers
             }
 
             return Unauthorized();
+        }
+
+        [HttpPost("revoke-token")]
+        [Authorize]
+        public async Task<IActionResult> RevokeToken(RevokeTokenRequest request)
+        {
+            var result = await authService.RevokeToken(User, request.UserId);
+
+            if (result == null)
+            {
+                return NotFound("User not found or token already revoked.");
+            }
+
+            return Ok(result);
         }
     }
 }
